@@ -88,7 +88,7 @@ export async function getTasks(query: TaskQuery) {
   const [items, total] = await Promise.all([
     prisma.task.findMany({
       where,
-      orderBy: SORTS[query.sort].order as Prisma.TaskOrderByWithRelationInput[],
+      orderBy: SORTS[query.sort].order as unknown as Prisma.TaskOrderByWithRelationInput[],
       skip: (query.page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       include: { category: { select: { name: true, slug: true, accent: true } } },
