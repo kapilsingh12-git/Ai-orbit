@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------- content
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  icon        String
+  accent      String   @default("default") // token key: default | violet | cyan | amber | rose
+  sortOrder   Int      @default(0)
+  tasks       Task[]
+  createdAt   DateTime @default(now())
+
+  @@index([sortOrder])
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  summary     String
+  description String
+  icon        String
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  difficulty Difficulty @default(EASY)
+  isTrending Boolean    @default(false)
+  isFeatured Boolean    @default(false)
+
+  // denormalised counters, kept in sync by the mutations that change them
+  toolCount Int @default(0)
+  viewCount Int @default(0)
+  saveCount Int @default(0)
+
+  faqs  Faq[]
+  tools TaskTool[]
+  saves SavedTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([isTrending])
+  @@index([toolCount])
+  @@index([createdAt])
+}
+
+model Tool {
+  id         String     @id @default(cuid())
+  slug       String     @unique
+  name       String
+  tagline    String
+  websiteUrl String
+  logoUrl    String?
+  pricing    Pricing    @default(FREEMIUM)
+  kind       ToolKind   @default(TOOL)
+  platforms  String[]   @default([])
+  rating     Float      @default(0)
+  tasks      TaskTool[]
+  createdAt  DateTime   @default(now())
+
+  @@index([pricing])
+  @@index([kind])
+}
+
+// a tool's rank is per-task, which is the whole point of this module
+model TaskTool {
+  id     String @id @default(cuid())
+  taskId String
+  toolId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  upvotes Int     @default(0)
+  note    String?
+  votes   Vote[]
+
+  @@unique([taskId, toolId])
+  @@index([taskId, upvotes])
+}
+
+model Faq {
+  id       String @id @default(cuid())
+  taskId   String
+  task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  question String
+  answer   String
+  position Int    @default(0)
+
+  @@index([taskId, position])
+}
+
+// ---------------------------------------------------------------- user data
+
+model Vote {
+  id         String   @id @default(cuid())
+  userId     String
+  taskToolId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskTool   TaskTool @relation(fields: [taskToolId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, taskToolId])
+  @@index([userId])
+}
+
+model SavedTask {
+  id        String   @id @default(cuid())
+  userId    String
+  taskId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, taskId])
+  @@index([userId, createdAt])
+}
+
+model TaskSubmission {
+  id           String           @id @default(cuid())
+  name         String
+  summary      String
+  description  String
+  categorySlug String
+  exampleTool  String?
+  submitterId  String?
+  submitter    User?            @relation(fields: [submitterId], references: [id], onDelete: SetNull)
+  status       SubmissionStatus @default(PENDING)
+  reviewNote   String?
+  createdAt    DateTime         @default(now())
+
+  @@index([status, createdAt])
+}
+
+// ---------------------------------------------------------------- auth.js
+
+model User {
+  id            String           @id @default(cuid())
+  name          String?
+  email         String           @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  accounts      Account[]
+  sessions      Session[]
+  votes         Vote[]
+  saved         SavedTask[]
+  submissions   TaskSubmission[]
+  createdAt     DateTime         @default(now())
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------- enums
+
+enum Difficulty {
+  EASY
+  MODERATE
+  ADVANCED
+}
+
+enum Pricing {
+  FREE
+  FREEMIUM
+  PAID
+  ENTERPRISE
+}
+
+enum ToolKind {
+  TOOL
+  MODEL
+  AGENT
+  DEVICE
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

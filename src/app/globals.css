@@ -1,0 +1,172 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   AI Orbit design tokens.
+
+   Every colour, radius and type step used anywhere in this module resolves
+   through a variable declared here. To re-point the module at measured values
+   from aiorbit.club, edit this block only — no component needs to change.
+   See docs/DESIGN.md for how these were derived.
+   ========================================================================== */
+
+@theme {
+  /* surfaces ------------------------------------------------------------- */
+  --color-canvas: #000000; /* page background — matches meta-theme-color */
+  --color-surface: #0a0a0a; /* cards, panels */
+  --color-surface-raised: #121212; /* hover / active card */
+  --color-surface-sunken: #060606; /* inset wells, code, table stripes */
+
+  /* lines ---------------------------------------------------------------- */
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.16);
+  --color-line-focus: rgba(255, 255, 255, 0.4);
+
+  /* text ----------------------------------------------------------------- */
+  --color-ink: #ffffff;
+  --color-ink-muted: #a1a1aa;
+  --color-ink-faint: #6b6b74;
+
+  /* accents — used sparingly: one accent per surface, never as decoration */
+  --color-accent: #ffffff; /* primary action is white-on-black */
+  --color-accent-ink: #000000; /* text on top of --color-accent */
+  --color-violet: #8b5cf6;
+  --color-cyan: #22d3ee;
+  --color-amber: #f59e0b;
+  --color-rose: #f43f5e;
+  --color-emerald: #10b981;
+
+  /* geometry ------------------------------------------------------------- */
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+
+  /* type ----------------------------------------------------------------- */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* motion --------------------------------------------------------------- */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------------------------------------------------------------- base --- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  margin: 0;
+}
+
+/* Keyboard focus is visible everywhere; pointer focus is not. */
+:focus-visible {
+  outline: 2px solid var(--color-line-focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Scrollbar tuned to the dark canvas so it doesn't flash light on Windows. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* ------------------------------------------------------------ utilities --- */
+
+@utility container-page {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+@media (min-width: 1024px) {
+  .container-page {
+    padding-inline: 32px;
+  }
+}
+
+/* The one piece of decoration in the module: a hairline that catches light at
+   the top edge of a card, the way a physical bevel would. Applied to hero and
+   featured surfaces only — not to every card. */
+@utility edge-lit {
+  position: relative;
+}
+.edge-lit::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.28),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* Skeleton shimmer. Respects reduced motion by falling back to a flat block. */
+@utility skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-raised) 37%,
+    var(--color-surface) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s var(--ease-out-soft) infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton {
+    animation: none;
+    background: var(--color-surface-raised);
+  }
+}
