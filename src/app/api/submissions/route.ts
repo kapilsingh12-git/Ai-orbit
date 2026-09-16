@@ -3,8 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { currentUserId } from "@/lib/auth";
 
-// Shared with the client form so validation messages match on both sides.
-export const submissionSchema = z.object({
+ const submissionSchema = z.object({
   name: z.string().min(4, "Give the task a name of at least 4 characters.").max(80),
   summary: z.string().min(20, "The one-line summary needs at least 20 characters.").max(160),
   description: z.string().min(80, "Describe the task in at least 80 characters.").max(2000),
